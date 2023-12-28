@@ -13,8 +13,8 @@ import Down
 @main
 struct Command: ParsableCommand {
   static var configuration = CommandConfiguration(
-    abstract: "Parse Signal Sentence From Text Or File.",
-    version: "1.0.0",
+    abstract: "Parse Signal Sentence From Files/Folder/Text.",
+    version: "1.0.1",
     subcommands: [Files.self, Folder.self, Text.self],
     defaultSubcommand: Files.self
   )
@@ -34,36 +34,45 @@ class HLVParseInit {
   static var `default`: HLVParseInit { HLVParseInit() }
 }
 
+struct Options: ParsableArguments {
+  @Flag(name: .short, help: "open zh-cn sentence.")
+  var zh = false
+
+  @Option(name: .customShort("n"), help: "min sentence words.")
+  var minWords: UInt8 = 2
+}
+
 extension Command {
   
-  static func parseText(_ text: String, path: String = "", minZhNum: UInt8 = 1) {
+  static func parseText(_ text: String, zh: Bool, path: String?, minWords: UInt8) {
     _ = HLVParseInit.default
     
-    let r = HLVParse.parseZh(text, minZhNum: minZhNum)
-    
-    guard !r.isEmpty else {
-      hlvexit(HLVError.custom("cannot find enough chinese words."))
+    var r: [String]
+    if zh {
+      r = HLVParse.parseZh(text, minWords: minWords)
+    } else {
+      r = HLVParse.parse(text, minWords: minWords)
     }
-    if !path.isEmpty, r.count > 0 {
+    
+    if let path  {
       print("\(path):")
     }
     for i in 0..<r.count {
       print("\(i): \(r[i])")
-    }
-    print("")
+    }    
+    print("\(r.isEmpty ? "Cannot find.\n" : "")")
   }
   
   struct Files: ParsableCommand {
-    static var configuration = CommandConfiguration(abstract: "Parse Signal Sentence From Files." )
+    static var configuration = CommandConfiguration(abstract: "Parse Signal Sentence From Files.")
     
     @Argument(help: "the files path list by space", transform: { URL(filePath: $0) })
     var paths: [URL]
     
-    @Flag(name: .shortAndLong, help: "need parse markdown .")
+    @Flag(name: .short, help: "need parse markdown.")
     var markdown = false
-
-    @Option(name: .shortAndLong, help: "the min chinese nums.")
-    var numZh: UInt8 = 1
+    
+    @OptionGroup var option: Options
     
     mutating func run() throws {
       
@@ -107,7 +116,7 @@ extension Command {
             raw = (try? Down(markdownString: raw).toAttributedString([.hardBreaks]).string) ?? ""
           }
           
-          Command.parseText(raw, path: path.path(percentEncoded: false), minZhNum: numZh)
+          Command.parseText(raw, zh:option.zh, path: path.path(percentEncoded: false), minWords: option.minWords)
         } catch {
           print(error)
         }
@@ -121,12 +130,11 @@ extension Command {
     @Argument(help: "the files path list by space", transform: { URL(filePath: $0) })
     var folder: URL
     
-    @Flag(name: .shortAndLong, help: "need parse markdown .")
+    @Flag(name: .short, help: "need parse markdown.")
     var markdown = false
 
-    @Option(name: .shortAndLong, help: "the min chinese nums.")
-    var numZh: UInt8 = 1
-    
+    @OptionGroup var option: Options
+
     mutating func run() throws {
       guard let _ = hlvFileExistCheck(folder, isDirectory: true) else {
         hlvexit(HLVError.fileNotExist([folder.path()], isDirectory: true))
@@ -152,7 +160,7 @@ extension Command {
             raw = (try? Down(markdownString: raw).toAttributedString([.hardBreaks]).string) ?? ""
           }
           
-          Command.parseText(raw, path: path.path(percentEncoded: false), minZhNum: numZh)
+          Command.parseText(raw, zh:option.zh, path: path.path(percentEncoded: false), minWords: option.minWords)
         } catch {
           print(error)
         }
@@ -166,11 +174,10 @@ extension Command {
     @Argument(help: "the text to parse.")
     var text: String
     
-    @Option(name: .shortAndLong, help: "the min chinese nums.")
-    var numZh: UInt8 = 1
-    
+    @OptionGroup var option: Options
+
     mutating func run() throws {
-      Command.parseText(text, minZhNum: numZh)
+      Command.parseText(text, zh:option.zh, path: nil, minWords: option.minWords)
     }
   }
 }

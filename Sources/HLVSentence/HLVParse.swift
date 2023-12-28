@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NaturalLanguage
 
 extension String {
   public func components(_ separator: String, autoSuffix: Bool = true) -> [String] {
@@ -32,25 +33,57 @@ extension String {
 }
 
 extension Array where Element == String {
-  func components(_ separator: [(String,Bool)]) -> [String] {
+  
+  public func checkSpace() -> [String] {
+    self.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+  }
+  
+  func components(_ separators: [(String,Bool)]) -> [String] {
     var r: [String] = self
-    for (k,v) in separator {
+    for (k,v) in separators {
       r = r.flatMap { m in
         m.components(k, autoSuffix: v)
       }
     }
+    r = r.checkSpace()
     return r
   }
   
-  func checkMin(_ min: UInt8) -> [String] {
-    self
-      .compactMap { v -> [String]? in
-        guard v.count >= min else {
-          return nil
+  func nlp() -> [String] {
+    self.flatMap { v in
+      var sentence: [String] = []
+      let tokenizer = NLTokenizer(unit: .sentence)
+      tokenizer.string = v
+      tokenizer.enumerateTokens(in: v.startIndex..<v.endIndex) { range, _ in
+        let t = String(v[range])
+        if !t.isEmpty, t.count > 0 {
+          sentence.append(t)
         }
-        return [v]
+        return true
       }
-      .flatMap { $0 }
+      return sentence
+    }
+  }
+  
+  public func checkZhMin(minWords: UInt8 = 1) -> [String] {
+    self.flatMap { v -> [String] in
+      var num = minWords > 1 ? minWords : 1
+      for scalar in v.unicodeScalars {
+        guard num > 0 else {
+          break
+        }
+        if 0x4E00...0x9FFF ~= scalar.value {
+          num -= 1
+        }
+      }
+      return num == 0 ? [v] : []
+    }
+  }
+  
+  public func checkMin(minWords: UInt8 = 1) -> [String] {
+    self.flatMap { v -> [String] in
+      v.count >= (minWords > 1 ? minWords : 1) ? [v] : []
+    }
   }
 }
 
@@ -66,28 +99,18 @@ public struct HLVParse {
     zhSymbol.append((symbol, false))
   }
   
-  public static func parseLines(_ text: String) -> [String] {
+  public static func parseZh(_ text: String, minWords: UInt8 = 1) -> [String] {
     [text]
       .components(linesSymbol.map({ ($0, false) }))
-      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+      .components(zhSymbol)
+      .nlp()
+      .checkZhMin(minWords: minWords)
   }
   
-  public static func parseZh(_ text: String, minZhNum: UInt8 = 1) -> [String] {
-    parseLines(text)
-      .components(zhSymbol)
-      .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-      .compactMap { v -> [String]? in
-        var num = minZhNum
-        for scalar in v.unicodeScalars {
-          guard num > 0 else {
-            break
-          }
-          if 0x4E00...0x9FFF ~= scalar.value {
-            num -= 1
-          }
-        }
-        return num == 0 ? [v] : nil
-      }
-      .flatMap { $0 }
+  public static func parse(_ text: String, minWords: UInt8 = 1) -> [String] {
+    [text]
+      .components(linesSymbol.map({ ($0, false) }))
+      .nlp()
+      .checkMin(minWords: minWords)
   }
 }

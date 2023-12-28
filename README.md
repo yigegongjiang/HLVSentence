@@ -1,50 +1,86 @@
 # 文本分句
 
+## 多语言分句
+
+支持中文及其他语言的分句。对中文进行特别的校准，如：
+
+```
+布鲁克林河（Brooklin River），澳洲原生 Māori 部落称其为莫克伊-米加尔塔-阿特瓦河（Mokihinui River），它隐藏在新西兰西岸的峡谷间。// 布鲁克林河 是很少被人知晓的美丽河流...
+
+这条河流勾勒着大自然的绝美画卷。清澈的河水从高耸的山脉间流淌而下，映衬着原始森林，勾勒着一幅令人心醉的画卷。
+
+河水从峡谷间蜿蜒流淌，穿过原始森林，宛如大自然的心跳。缓缓流动的河水，仿佛一首古老的诗歌，述说着它的历史和美丽。
+
+对于 Māori 部落而言，这是一片神圣之地，自然与精神交织在一起。
+
+As the sun sets, 河水倒映出熊熊燃烧的色彩，给天空和水面披上了一层深红和金色的轻纱。
+
+布鲁克林河，一条鲜为人知的河流，却是大自然鬼斧神工的杰作，绽放着无与伦比的美丽。
+```
+
+分句如下：
+```
+> hlvst -z test.txt
+
+test.txt:
+0: 布鲁克林河（Brooklin River），澳洲原生 Māori 部落称其为莫克伊-米加尔塔-阿特瓦河（Mokihinui River），它隐藏在新西兰西岸的峡谷间。
+1: 布鲁克林河 是很少被人知晓的美丽河流...
+2: 这条河流勾勒着大自然的绝美画卷。
+3: 清澈的河水从高耸的山脉间流淌而下，映衬着原始森林，勾勒着一幅令人心醉的画卷。
+4: 河水从峡谷间蜿蜒流淌，穿过原始森林，宛如大自然的心跳。
+5: 缓缓流动的河水，仿佛一首古老的诗歌，述说着它的历史和美丽。
+6: 对于 Māori 部落而言，这是一片神圣之地，自然与精神交织在一起。
+7: As the sun sets, 河水倒映出熊熊燃烧的色彩，给天空和水面披上了一层深红和金色的轻纱。
+8: 布鲁克林河，一条鲜为人知的河流，却是大自然鬼斧神工的杰作，绽放着无与伦比的美丽。
+```
+
+其他语言如：
+
+```
+Certainly! Here's a 100-word essay praising the beauty of the Brooklin River, incorporating English with a mix of Japanese and Hindi:
+
+Nestled in New Zealand's serene landscapes, the Brooklin River, known as Mokihinui in Maori, is a hidden gem waiting to be discovered. The pristine waters meander through untouched valleys, "美しい" (utsukushī) cliffs rising alongside, reminiscent of 日本の美しい谷間 (Nihon no utsukushī tanima). Its allure, जो केवल कहने के लिए कम है (jo keval kahane ke lie kam hai), captivates the soul. The river's silence whispers tales, जैसे समय ने उसके ऊपर सौंपा हो (jaise samay ne uske upar saumpa ho), each ripple a chapter of nature's grandeur. 
+
+The Brooklin River's essence, its शांति (shaanti), envelops all who venture near. Its banks echo ध्यान (dhyaan), inviting reflection amidst nature's canvas. Here, समय की गति धीमी हो जाती है (samay ki gati dheemi ho jaati hai), time slows to embrace the whispers of the flowing waters. It's a symphony, सुनने वाले की अनदेखी रह जाती है (sunne vaale ki anadekhi rah jaati hai), where even the observer remains unseen in the tranquility.
+
+The Brooklin River stands as a testament to nature's artistry. Its beauty, जो अक्सर छिपा रहता है (jo aksar chipa rahta hai), often hidden from the bustling world, is a treasure trove for the intrepid explorer. Amongst the whispers of its name, lies a world waiting to be embraced, संगीत की भांति (sangeet ki bhaanti), like a melody echoing across cultures.
+```
+
+分句如下：
+```
+> hlvst test.txt
+
+test.txt:
+0: Certainly!
+1: Here's a 100-word essay praising the beauty of the Brooklin River, incorporating English with a mix of Japanese and Hindi:
+2: Nestled in New Zealand's serene landscapes, the Brooklin River, known as Mokihinui in Maori, is a hidden gem waiting to be discovered.
+3: The pristine waters meander through untouched valleys, "美しい" (utsukushī) cliffs rising alongside, reminiscent of 日本の美しい谷間 (Nihon no utsukushī tanima).
+4: Its allure, जो केवल कहने के लिए कम है (jo keval kahane ke lie kam hai), captivates the soul.
+5: The river's silence whispers tales, जैसे समय ने उसके ऊपर सौंपा हो (jaise samay ne uske upar saumpa ho), each ripple a chapter of nature's grandeur.
+6: The Brooklin River's essence, its शांति (shaanti), envelops all who venture near.
+7: Its banks echo ध्यान (dhyaan), inviting reflection amidst nature's canvas.
+8: Here, समय की गति धीमी हो जाती है (samay ki gati dheemi ho jaati hai), time slows to embrace the whispers of the flowing waters.
+9: It's a symphony, सुनने वाले की अनदेखी रह जाती है (sunne vaale ki anadekhi rah jaati hai), where even the observer remains unseen in the tranquility.
+10: The Brooklin River stands as a testament to nature's artistry.
+11: Its beauty, जो अक्सर छिपा रहता है (jo aksar chipa rahta hai), often hidden from the bustling world, is a treasure trove for the intrepid explorer.
+12: Amongst the whispers of its name, lies a world waiting to be embraced, संगीत की भांति (sangeet ki bhaanti), like a melody echoing across cultures.
+```
+
 ### Command
 
 ```
 hlvst --help                                                             
 
-OVERVIEW: Parse Signal Sentence From Text Or File.
+hlvst files a.md b.txt
+hlvst folder ./
+hlvst text It's a very nice day today. I made an appointment with a friend to play ball.
 
-USAGE: command <subcommand>
+-m: need parse markdown.
+-z: open zh-cn sentence.
+-n: min sentence words.
 
-OPTIONS:
-  --version               Show the version.
-  -h, --help              Show help information.
-
-SUBCOMMANDS:
-  files (default)         Parse Signal Sentence From Files.
-  folder                  Parse Signal Sentence From Folder.
-  text                    Parse Signal Sentence From Text.
-
-  See 'command help <subcommand>' for detailed help.
-```
-
-```
-hlvst files -m -n 10 xx.md xx.txt
-
-hlvst folder -m -n 10 ./
-
-hlvst txt xxx
-```
-
-Example：  
-file from:https://github.com/yigegongjiang/HLVFileDump/blob/main/README.md
-
-```
-hlvst -m -n 5 README.md                                                      
-
-README.md:
-0: 文件类型识别
-1: 文本文件识别
-2: 对于一个文件是否是文本文件，并没有完全行之有效的识别方案。
-3: 只能通过尝试去理解内容，这是有一定误差的。
-4: 可行的方案有：文件名后缀匹配、magic number 过滤等，虽然会有一定误差，但在比较稳定的环境下，这也是有效的。
-5: 对文本内容全量解码，这在文本较小的时候非常行之有效。
-6: 若环境中出现图片、压缩文件等，这会有极大的性能损耗。
-7: 这里提供一种思路，即对文本内容主动进行多个位置的截取解码，以较小的性能开销来对文本文件进行识别。
-8: 通过 magic number 可以非常准确的识别特定的文件类型，这基于 ELF 等类似的二进制文件均具有表现一致的文件头。
+For example:
+hlvst files -m -z -n 10 unicode.md
 ```
 
 ### Code
@@ -52,7 +88,19 @@ README.md:
 ```
 import HLVSentence
 
-let r = HLVParse.parseZh(text, minZhNum: minZhNum)
+// 中文分句
+let r = HLVParse.parseZh(text, minWords: minWords)
+// 其他语言分句
+let r = HLVParse.parse(text, minWords: minWords)
+```
+
+对于中文分句，支持新增分句符号，可通过如下方式：
+
+```
+HLVParse.appendZhSymbol("///")
+HLVParse.appendZhSymbol("//")
+HLVParse.appendZhSymbol("/*")
+HLVParse.appendZhSymbol("*/")
 ```
 
 ## Installation
@@ -62,7 +110,7 @@ By Swift Package Manager.
 ```
 let package = Package(
     dependencies: [
-        .package(url: "https://github.com/yigegongjiang/HLVSentence.git", .upToNextMajor(from: "1.0.0"))
+        .package(url: "https://github.com/yigegongjiang/HLVSentence.git", .upToNextMajor(from: "1.0.1"))
     ],
     targets: [ .target(dependencies: [...,"HLVSentence"]) ]
 )
