@@ -9,12 +9,13 @@ import Foundation
 import HLVSentence
 import HLVFileDump
 import Down
+import Dispatch
 
 @main
 struct Command: ParsableCommand {
   static var configuration = CommandConfiguration(
     abstract: "Parse Signal Sentence From Files/Folder/Text.",
-    version: "1.0.1",
+    version: "1.0.2",
     subcommands: [Files.self, Folder.self, Text.self],
     defaultSubcommand: Files.self
   )
@@ -35,6 +36,12 @@ class HLVParseInit {
 }
 
 struct Options: ParsableArguments {
+  @Flag(name: .short, help: "need parse markdown.")
+  var markdown = false
+  
+  @Flag(name: .short, help: "need text correct.")
+  var correct = false
+
   @Flag(name: .short, help: "open zh-cn sentence.")
   var zh = false
 
@@ -44,7 +51,7 @@ struct Options: ParsableArguments {
 
 extension Command {
   
-  static func parseText(_ text: String, zh: Bool, path: String?, minWords: UInt8) {
+  static func parseText(_ text: String, correct: Bool, zh: Bool, path: String?, minWords: UInt8) {
     _ = HLVParseInit.default
     
     var r: [String]
@@ -60,7 +67,44 @@ extension Command {
     for i in 0..<r.count {
       print("\(i): \(r[i])")
     }    
-    print("\(r.isEmpty ? "Cannot find.\n" : "")")
+    print("\(r.isEmpty ? "Cannot find effective sentence.\n" : "")")
+    
+    if !r.isEmpty, correct {
+      let semaphore = DispatchSemaphore(value: 0)
+
+      var result: [(first: String, last: String, errors:[Any])] = []
+      HLVTextCorrect.correct(r) { (v: Result<[(first: String, last: String, errors: [Any])], HLVTextCorrectError>) in
+        switch v {
+        case .success(let m):
+          result = m
+        case .failure(.python3EnvInstall):
+          hlvexit(HLVError.custom("Text Correct Field. May need to install python3 and pycorrector. see: https://github.com/shibing624/pycorrector"))
+        }
+        semaphore.signal()
+      }
+      
+      print("")
+      
+      var index = 0
+      while semaphore.wait(timeout: .now()) == .timedOut {
+        print("\u{1B}[1A\u{1B}[K\((path != nil) ? "[\(path!)] ": "")Text Correct\(Array(repeating: ".", count: (index % 6) + 1).joined(separator: ""))")
+        index += 1
+        Thread.sleep(forTimeInterval: 0.5)
+      }
+      print("\u{1B}[1A\u{1B}[K>>>>>>>>>>>>>>>> \((path != nil) ? "[\(path!)] ": "")Text Correct Result >>>>>>>>>>>>>>>>")
+      
+      if result.isEmpty {
+        print("Congratulations, No Text Need Correct.")
+      }
+      
+      for (first, last, errors) in result {
+        print("source: \(first)")
+        print("target: \(last)")
+        print("error: \(errors)")
+      }
+      
+      print("")
+    }
   }
   
   struct Files: ParsableCommand {
@@ -68,9 +112,6 @@ extension Command {
     
     @Argument(help: "the files path list by space", transform: { URL(filePath: $0) })
     var paths: [URL]
-    
-    @Flag(name: .short, help: "need parse markdown.")
-    var markdown = false
     
     @OptionGroup var option: Options
     
@@ -112,11 +153,11 @@ extension Command {
           
           var raw = try file.read()
           
-          if markdown {
+          if option.markdown {
             raw = (try? Down(markdownString: raw).toAttributedString([.hardBreaks]).string) ?? ""
           }
           
-          Command.parseText(raw, zh:option.zh, path: path.path(percentEncoded: false), minWords: option.minWords)
+          Command.parseText(raw, correct:option.correct, zh:option.zh, path: path.path(percentEncoded: false), minWords: option.minWords)
         } catch {
           print(error)
         }
@@ -130,9 +171,6 @@ extension Command {
     @Argument(help: "the files path list by space", transform: { URL(filePath: $0) })
     var folder: URL
     
-    @Flag(name: .short, help: "need parse markdown.")
-    var markdown = false
-
     @OptionGroup var option: Options
 
     mutating func run() throws {
@@ -156,11 +194,11 @@ extension Command {
           
           var raw = try file.read()
           
-          if markdown {
+          if option.markdown {
             raw = (try? Down(markdownString: raw).toAttributedString([.hardBreaks]).string) ?? ""
           }
           
-          Command.parseText(raw, zh:option.zh, path: path.path(percentEncoded: false), minWords: option.minWords)
+          Command.parseText(raw, correct:option.correct, zh:option.zh, path: path.path(percentEncoded: false), minWords: option.minWords)
         } catch {
           print(error)
         }
@@ -177,7 +215,11 @@ extension Command {
     @OptionGroup var option: Options
 
     mutating func run() throws {
-      Command.parseText(text, zh:option.zh, path: nil, minWords: option.minWords)
+      var raw = text
+      if option.markdown {
+        raw = (try? Down(markdownString: raw).toAttributedString([.hardBreaks]).string) ?? ""
+      }
+      Command.parseText(raw, correct:option.correct, zh:option.zh, path: nil, minWords: option.minWords)
     }
   }
 }

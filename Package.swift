@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "HLVSentence",
     platforms: [
-      .macOS(.v13)
+      .macOS(.v13),
     ],
     products: [
       .library(name: "HLVSentence", targets: ["HLVSentence"]),
@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0"),
         .package(url: "https://github.com/yigegongjiang/HLVFileDump.git", .upToNextMajor(from: "1.0.0")),
         .package(url: "https://github.com/johnxnguyen/Down.git", .upToNextMajor(from: "0.1.0")),
+        .package(url: "https://github.com/kareman/SwiftShell.git", branch: "master")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -24,6 +25,7 @@ let package = Package(
           name: "HLVSentence",
           dependencies: [
             "HLVFileDump",
+            "SwiftShell",
           ]
         ),
         .executableTarget(
