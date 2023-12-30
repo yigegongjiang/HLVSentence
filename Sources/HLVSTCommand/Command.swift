@@ -116,6 +116,8 @@ extension Command {
           print("source: \(first)")
           print("target: \(last)")
           print("error: \(errors)")
+          print("")
+          try await Task.sleep(nanoseconds: 200000000)
         }
         semaphore.signal()
       }

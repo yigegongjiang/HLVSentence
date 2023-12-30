@@ -7,13 +7,18 @@
 
 import Foundation
 import SwiftShell
+#if canImport(Combine)
+import Combine
+#endif
 
 public enum HLVTextCorrectError: Error {
   case python3EnvInstall
 }
 
+public typealias HLVTextCorrectResult = [(first: String, last: String, errors:[Any])]
+
 public protocol HLVTextCorrectProtocol {
-  static func correct(_ texts: [String], _ completion: @escaping (Result<[(first: String, last: String, errors:[Any])], HLVTextCorrectError>) -> Void)
+  static func correct(_ texts: [String], _ completion: @escaping (Result<HLVTextCorrectResult, HLVTextCorrectError>) -> Void)
 }
 
 public struct HLVTextCorrect: HLVTextCorrectProtocol {
@@ -44,7 +49,7 @@ public struct HLVTextCorrect: HLVTextCorrectProtocol {
       }
   }
   
-  public static func correct(_ texts: [String], _ completion: @escaping (Result<[(first: String, last: String, errors:[Any])], HLVTextCorrectError>) -> Void) {
+  public static func correct(_ texts: [String], _ completion: @escaping (Result<HLVTextCorrectResult, HLVTextCorrectError>) -> Void) {
     
     let raw = texts.map { extract($0) }
     let input = "['\(raw.joined(separator: "','"))']"
@@ -88,7 +93,7 @@ public struct HLVTextCorrect: HLVTextCorrectProtocol {
 }
 
 public extension HLVTextCorrectProtocol {
-  static func correct(_ texts: [String]) async throws -> [(first: String, last: String, errors:[Any])] {
+  static func correct(_ texts: [String]) async throws -> HLVTextCorrectResult {
     try await withCheckedThrowingContinuation { continuation in
       correct(texts) { result in
         switch result {
@@ -101,5 +106,12 @@ public extension HLVTextCorrectProtocol {
     }
   }
   
-  
+#if canImport(Combine)
+  static func correct(_ texts: [String]) -> AnyPublisher<HLVTextCorrectResult, HLVTextCorrectError> {
+    Future<HLVTextCorrectResult, HLVTextCorrectError> {
+      correct(texts, $0)
+    }
+    .eraseToAnyPublisher()
+  }
+#endif
 }
