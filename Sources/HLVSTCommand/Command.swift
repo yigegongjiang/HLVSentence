@@ -72,18 +72,32 @@ extension Command {
     if !r.isEmpty, correct {
       let semaphore = DispatchSemaphore(value: 0)
 
-      var result: [(first: String, last: String, errors:[Any])] = []
-      HLVTextCorrect.correct(r) { (v: Result<[(first: String, last: String, errors: [Any])], HLVTextCorrectError>) in
-        switch v {
-        case .success(let m):
-          result = m
-        case .failure(.python3EnvInstall):
-          hlvexit(HLVError.custom("Text Correct Field. May need to install python3 and pycorrector. see: https://github.com/shibing624/pycorrector"))
+      actor _Data {
+        var result: [(first: String, last: String, errors:[Any])] = []
+        
+        func modifyResult(newValue: [(first: String, last: String, errors:[Any])]) {
+          result = newValue
         }
-        semaphore.signal()
+        
+        func readResult() -> [(first: String, last: String, errors:[Any])] {
+          return result
+        }
       }
       
-      print("")
+      let _data = _Data()
+      let _r = r
+      
+      Task {
+        do {
+          let result = try await HLVTextCorrect.correct(_r)
+          await _data.modifyResult(newValue: result)
+          semaphore.signal()
+        } catch {
+          hlvexit(HLVError.custom("Text Correct Field. May need to install python3 and pycorrector. see: https://github.com/shibing624/pycorrector"))
+        }
+      }
+      
+      print("")// 解决 \u{1B}[1A\u{1B}[K 终端回刷方案可能的抖动
       
       var index = 0
       while semaphore.wait(timeout: .now()) == .timedOut {
@@ -93,16 +107,20 @@ extension Command {
       }
       print("\u{1B}[1A\u{1B}[K>>>>>>>>>>>>>>>> \((path != nil) ? "[\(path!)] ": "")Text Correct Result >>>>>>>>>>>>>>>>")
       
-      if result.isEmpty {
-        print("Congratulations, No Text Need Correct.")
+      Task {
+        if await _data.readResult().isEmpty {
+          print("Congratulations, No Text Need Correct.")
+        }
+        
+        for (first, last, errors) in await _data.readResult() {
+          print("source: \(first)")
+          print("target: \(last)")
+          print("error: \(errors)")
+        }
+        semaphore.signal()
       }
       
-      for (first, last, errors) in result {
-        print("source: \(first)")
-        print("target: \(last)")
-        print("error: \(errors)")
-      }
-      
+      semaphore.wait()
       print("")
     }
   }

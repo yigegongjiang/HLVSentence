@@ -12,7 +12,11 @@ public enum HLVTextCorrectError: Error {
   case python3EnvInstall
 }
 
-public struct HLVTextCorrect {
+public protocol HLVTextCorrectProtocol {
+  static func correct(_ texts: [String], _ completion: @escaping (Result<[(first: String, last: String, errors:[Any])], HLVTextCorrectError>) -> Void)
+}
+
+public struct HLVTextCorrect: HLVTextCorrectProtocol {
   
   static let pytext = """
 
@@ -83,3 +87,19 @@ public struct HLVTextCorrect {
   }
 }
 
+public extension HLVTextCorrectProtocol {
+  static func correct(_ texts: [String]) async throws -> [(first: String, last: String, errors:[Any])] {
+    try await withCheckedThrowingContinuation { continuation in
+      correct(texts) { result in
+        switch result {
+        case let .success(success):
+            return continuation.resume(returning: success)
+        case let .failure(failure):
+            return continuation.resume(throwing: failure)
+        }
+      }
+    }
+  }
+  
+  
+}
