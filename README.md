@@ -1,4 +1,6 @@
-# 文本分句
+# 文本分句 & 纠错
+
+![SentenceAndCorrect](mount.gif)
 
 ## 多语言分句
 
@@ -66,7 +68,13 @@ test.txt:
 12: Amongst the whispers of its name, lies a world waiting to be embraced, संगीत की भांति (sangeet ki bhaanti), like a melody echoing across cultures.
 ```
 
-### Command
+## 纠错
+
+中文文字纠错使用 [pycorrector](https://github.com/shibing624/pycorrector)，可参考源项目进行安装。  
+纠错模型使用 **MacBert-CSC**，第一次执行命令会进行模型下载，预计 400M。
+存储地址：`~/.cache/huggingface/hub/models--shibing624--macbert4csc-base-chinese`
+
+## Command
 
 ```
 hlvst --help                                                             
@@ -75,15 +83,16 @@ hlvst files a.md b.txt
 hlvst folder ./
 hlvst text It's a very nice day today. I made an appointment with a friend to play ball.
 
+-c: need text correct.
 -m: need parse markdown.
 -z: open zh-cn sentence.
--n: min sentence words.
+-n <num>: min sentence words.(default: 2)
 
 For example:
-hlvst files -m -z -n 10 unicode.md
+hlvst files -c -m -z -n 10 unicode.md
 ```
 
-### Code
+## Code
 
 ```
 import HLVSentence
@@ -103,6 +112,18 @@ HLVParse.appendZhSymbol("/*")
 HLVParse.appendZhSymbol("*/")
 ```
 
+中文纠错，支持 block、async-await、Combine 三种方式获取异步数据：
+
+```
+import HLVSentence
+
+do {
+  let result = try await HLVTextCorrect.correct(_r)
+} catch {
+  print("Text Correct Field. May need to install python3 and pycorrector. see: https://github.com/shibing624/pycorrector")
+}
+```
+
 ## Installation
 
 By Swift Package Manager.
@@ -110,7 +131,7 @@ By Swift Package Manager.
 ```
 let package = Package(
     dependencies: [
-        .package(url: "https://github.com/yigegongjiang/HLVSentence.git", .upToNextMajor(from: "1.0.1"))
+        .package(url: "https://github.com/yigegongjiang/HLVSentence.git", .upToNextMajor(from: "1.0.2"))
     ],
     targets: [ .target(dependencies: [...,"HLVSentence"]) ]
 )
