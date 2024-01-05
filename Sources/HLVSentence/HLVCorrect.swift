@@ -23,6 +23,7 @@ public protocol HLVTextCorrectProtocol {
 
 public struct HLVTextCorrect: HLVTextCorrectProtocol {
   
+  public static var envPath: String?
   static let pytext = """
 
   from pycorrector import MacBertCorrector
@@ -55,7 +56,11 @@ public struct HLVTextCorrect: HLVTextCorrectProtocol {
     let input = "['\(raw.joined(separator: "','"))']"
     let _pytext = pytext.replacingOccurrences(of: "<replace>", with: input)
     
-    SwiftShell.runAsync("python3", "-c", _pytext).onCompletion { (out: AsyncCommand) in
+    var context: CustomContext = SwiftShell.CustomContext(SwiftShell.main)
+    if let path = HLVTextCorrect.envPath, !path.isEmpty {
+      context.env["PATH"] = path
+    }
+    context.runAsync("python3", "-c", _pytext).onCompletion { (out: AsyncCommand) in
       var r = out.stdout.read()
       r = r.replacingOccurrences(of: "'", with: "\"")
       r = r.replacingOccurrences(of: "(", with: "[")
