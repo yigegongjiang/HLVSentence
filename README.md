@@ -124,7 +124,14 @@ do {
 }
 ```
 
-## Installation
+## Installation CLI
+
+```
+brew tap yigegongjiang/tap
+brew install hlvst
+```
+
+## Installation Library
 
 By Swift Package Manager.
 
